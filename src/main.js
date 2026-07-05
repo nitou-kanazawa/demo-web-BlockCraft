@@ -1,7 +1,12 @@
 import * as THREE from 'three';
+import { World } from './core/world.js';
+import { WorldRenderer } from './render/worldRenderer.js';
+import { CHUNK_SIZE } from './core/chunk.js';
 
-// Task 1: minimal scene to verify that Three.js renders on GitHub Pages.
-// Later tasks replace this placeholder with the actual voxel world.
+// Task 3: render the generated voxel world with a slow orbiting camera.
+// Player controls arrive in Task 4.
+
+const VIEW_RADIUS = 3; // chunks around the center
 
 const container = document.getElementById('app');
 
@@ -12,6 +17,7 @@ container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 60, 140);
 
 const camera = new THREE.PerspectiveCamera(
   70,
@@ -19,24 +25,21 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(3, 3, 5);
-camera.lookAt(0, 0, 0);
 
-const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+const ambient = new THREE.AmbientLight(0xffffff, 0.55);
 scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(5, 10, 3);
+const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+sun.position.set(60, 100, 40);
 scene.add(sun);
 
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshLambertMaterial({ color: 0x55aa44 }),
-);
-scene.add(cube);
+const seedParam = new URLSearchParams(location.search).get('seed');
+const world = new World(seedParam ? Number(seedParam) : 1337);
+const worldRenderer = new WorldRenderer(scene, world);
+worldRenderer.ensureRadius(0, 0, VIEW_RADIUS);
 
-const grid = new THREE.GridHelper(20, 20, 0x444444, 0x888888);
-grid.position.y = -0.5;
-scene.add(grid);
+const centerX = CHUNK_SIZE / 2;
+const centerZ = CHUNK_SIZE / 2;
+const centerY = Math.max(world.surfaceHeight(centerX, centerZ), 20);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -45,7 +48,14 @@ window.addEventListener('resize', () => {
 });
 
 renderer.setAnimationLoop((time) => {
-  cube.rotation.y = time / 1000;
-  cube.rotation.x = time / 1700;
+  const angle = time / 12000;
+  const orbitRadius = 45;
+  camera.position.set(
+    centerX + Math.cos(angle) * orbitRadius,
+    centerY + 22,
+    centerZ + Math.sin(angle) * orbitRadius,
+  );
+  camera.lookAt(centerX, centerY, centerZ);
+  worldRenderer.update();
   renderer.render(scene, camera);
 });
