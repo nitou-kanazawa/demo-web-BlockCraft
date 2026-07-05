@@ -33,10 +33,39 @@ export class WorldRenderer {
     }
   }
 
-  /** Rebuild meshes for all dirty chunks. Call once per frame. */
-  update() {
+  /**
+   * Rebuild meshes for dirty chunks, at most `maxRebuilds` per call to keep
+   * frame times stable while chunks stream in around a moving player.
+   * When a center is given, only chunks within `radius` of it are meshed —
+   * pruned far chunks stay dirty until they come back into range.
+   */
+  update(maxRebuilds = Infinity, ccx = 0, ccz = 0, radius = Infinity) {
+    let rebuilt = 0;
     for (const chunk of this.world.chunks.values()) {
-      if (chunk.dirty) this.rebuildChunk(chunk);
+      if (!chunk.dirty) continue;
+      if (Math.max(Math.abs(chunk.cx - ccx), Math.abs(chunk.cz - ccz)) > radius) continue;
+      this.rebuildChunk(chunk);
+      if (++rebuilt >= maxRebuilds) break;
+    }
+  }
+
+  /**
+   * Drop meshes of chunks farther than `radius` (Chebyshev) from chunk
+   * (ccx, ccz). Voxel data stays in the world; the chunk is marked dirty so
+   * it remeshes when it comes back into range.
+   */
+  pruneBeyond(ccx, ccz, radius) {
+    for (const [key, entry] of this.meshes) {
+      const [cx, cz] = key.split(',').map(Number);
+      if (Math.max(Math.abs(cx - ccx), Math.abs(cz - ccz)) <= radius) continue;
+      for (const mesh of Object.values(entry)) {
+        if (!mesh) continue;
+        this.scene.remove(mesh);
+        mesh.geometry.dispose();
+      }
+      this.meshes.delete(key);
+      const chunk = this.world.getChunk(cx, cz);
+      if (chunk) chunk.dirty = true;
     }
   }
 

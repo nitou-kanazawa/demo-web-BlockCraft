@@ -21,6 +21,31 @@
     canvas {
       display: block;
     }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    #overlay .panel {
+      background: rgba(20, 20, 20, 0.85);
+      padding: 2rem 3rem;
+      border-radius: 12px;
+    }
+    #overlay h1 {
+      margin: 0 0 0.5rem;
+    }
+    #overlay .keys {
+      color: #aaa;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
