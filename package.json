@@ -1,0 +1,16 @@
+{
+  "name": "blockcraft",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A Minecraft-like voxel game running in the browser, built with Three.js",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
+  }
+}
