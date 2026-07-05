@@ -46,6 +46,68 @@
       color: #aaa;
       font-size: 0.9rem;
     }
+    #crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      mix-blend-mode: difference;
+    }
+    #crosshair::before {
+      left: 7px;
+      top: 0;
+      width: 2px;
+      height: 16px;
+    }
+    #crosshair::after {
+      left: 0;
+      top: 7px;
+      width: 16px;
+      height: 2px;
+    }
+    #hotbar {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+    #hotbar .slot {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.18)),
+        var(--swatch, #777);
+    }
+    #hotbar .slot.selected {
+      border-color: #fff;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+    }
+    #hotbar .slot span {
+      position: absolute;
+      left: 4px;
+      top: 2px;
+      color: rgba(255, 255, 255, 0.85);
+      font: 11px system-ui, sans-serif;
+      text-shadow: 0 1px 2px #000;
+    }
   </style>
 </head>
 <body>

@@ -76,6 +76,19 @@ export function moveAxis(isSolidAt, state, axis, delta) {
 }
 
 /**
+ * Does the player's AABB overlap voxel (vx, vy, vz)?
+ * Used to refuse placing a block inside the player.
+ */
+export function playerIntersectsVoxel(pos, vx, vy, vz) {
+  const half = PLAYER.WIDTH / 2;
+  return (
+    pos.x - half < vx + 1 && pos.x + half > vx &&
+    pos.y < vy + 1 && pos.y + PLAYER.HEIGHT > vy &&
+    pos.z - half < vz + 1 && pos.z + half > vz
+  );
+}
+
+/**
  * Advance the player by dt seconds.
  * input: { dirX, dirZ, jump } — desired world-space horizontal direction
  * (|(dirX, dirZ)| <= 1) and whether the jump key is held.
