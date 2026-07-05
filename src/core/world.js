@@ -36,6 +36,12 @@ export class World {
       chunk = new Chunk(cx, cz);
       generateChunk(chunk, this.seed, this.noise);
       this.chunks.set(key, chunk);
+      // Existing neighbours meshed against AIR where this chunk now stands;
+      // they need remeshing to drop those now-hidden border faces.
+      for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const n = this.getChunk(cx + dx, cz + dz);
+        if (n) n.dirty = true;
+      }
     }
     return chunk;
   }
