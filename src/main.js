@@ -4,6 +4,8 @@ import { WorldRenderer } from './render/worldRenderer.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './core/chunk.js';
 import { PLAYER, createPlayerState, stepPlayer } from './core/physics.js';
 import { PlayerControls } from './player/controls.js';
+import { BlockInteraction } from './player/interaction.js';
+import { Hotbar } from './ui/hotbar.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
 const MAX_DT = 0.05; // clamp long frames (tab switch etc.)
@@ -45,6 +47,12 @@ const player = createPlayerState(spawnX, spawnY, spawnZ);
 
 const controls = new PlayerControls(renderer.domElement);
 const isSolidAt = (x, y, z) => world.isSolidAt(x, y, z);
+const hotbar = new Hotbar();
+const interaction = new BlockInteraction(world, controls, player, hotbar, scene);
+
+const crosshair = document.createElement('div');
+crosshair.id = 'crosshair';
+document.body.appendChild(crosshair);
 
 // --- Overlay (click to play) ----------------------------------------------
 
@@ -84,6 +92,7 @@ renderer.setAnimationLoop((now) => {
     }
   }
   controls.applyToCamera(camera, player.pos, PLAYER.EYE);
+  interaction.update(camera);
 
   const pcx = Math.floor(player.pos.x / CHUNK_SIZE);
   const pcz = Math.floor(player.pos.z / CHUNK_SIZE);
