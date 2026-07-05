@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildChunkMesh, faceVisible, blockFaceTile, tileUvRect, FACES, TILE,
+  buildChunkMesh, faceVisible, blockFaceTile, tileUvRect, FACES, TILE, FACE_SHADE,
 } from '../src/core/mesher.js';
 import { Chunk } from '../src/core/chunk.js';
 import { BLOCK } from '../src/core/blocks.js';
@@ -82,6 +82,23 @@ describe('buildChunkMesh', () => {
     for (let i = 0; i < solid.positions.length; i += 3) xs.push(solid.positions[i]);
     expect(Math.min(...xs)).toBe(32);
     expect(Math.max(...xs)).toBe(33);
+  });
+
+  it('bakes directional shading into vertex colors', () => {
+    const c = new Chunk(0, 0);
+    c.set(5, 10, 5, BLOCK.STONE);
+    const { solid } = buildChunkMesh(c, singleChunkLookup(c));
+    expect(solid.colors.length).toBe(solid.positions.length);
+    for (let v = 0; v < solid.normals.length / 3; v++) {
+      const [nx, ny] = [solid.normals[v * 3], solid.normals[v * 3 + 1]];
+      const shade = solid.colors[v * 3];
+      if (ny === 1) expect(shade).toBe(FACE_SHADE[3]); // top, full bright
+      if (ny === -1) expect(shade).toBe(FACE_SHADE[2]); // bottom, darkest
+      if (nx !== 0) expect(shade).toBe(FACE_SHADE[0]); // east/west
+      // r == g == b (grayscale shading)
+      expect(solid.colors[v * 3 + 1]).toBe(shade);
+      expect(solid.colors[v * 3 + 2]).toBe(shade);
+    }
   });
 
   it('keeps normals unit-length and axis-aligned', () => {

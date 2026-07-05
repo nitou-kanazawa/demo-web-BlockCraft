@@ -83,6 +83,11 @@ const FACE_PX = 1;
 const FACE_NY = 2;
 const FACE_PY = 3;
 
+// Directional shading baked into vertex colors (Minecraft-style):
+// top full bright, east/west darker than north/south, bottom darkest.
+// Order matches FACES: nx, px, ny, py, nz, pz.
+export const FACE_SHADE = [0.6, 0.6, 0.5, 1.0, 0.8, 0.8];
+
 /** Atlas tile for a given block face. */
 export function blockFaceTile(blockId, faceIndex) {
   switch (blockId) {
@@ -139,8 +144,8 @@ export function faceVisible(id, neighbor) {
  */
 export function buildChunkMesh(chunk, getWorldBlock) {
   const buckets = {
-    solid: { positions: [], normals: [], uvs: [], indices: [] },
-    water: { positions: [], normals: [], uvs: [], indices: [] },
+    solid: { positions: [], normals: [], uvs: [], colors: [], indices: [] },
+    water: { positions: [], normals: [], uvs: [], colors: [], indices: [] },
   };
   const ox = chunk.cx * CHUNK_SIZE;
   const oz = chunk.cz * CHUNK_SIZE;
@@ -160,10 +165,12 @@ export function buildChunkMesh(chunk, getWorldBlock) {
           if (!faceVisible(id, neighbor)) continue;
 
           const [u0, v0, u1, v1] = tileUvRect(blockFaceTile(id, f));
+          const shade = FACE_SHADE[f];
           const base = bucket.positions.length / 3;
           for (const corner of face.corners) {
             bucket.positions.push(wx + corner.pos[0], y + corner.pos[1], wz + corner.pos[2]);
             bucket.normals.push(face.dir[0], face.dir[1], face.dir[2]);
+            bucket.colors.push(shade, shade, shade);
             bucket.uvs.push(
               corner.uv[0] ? u1 : u0,
               corner.uv[1] ? v1 : v0,

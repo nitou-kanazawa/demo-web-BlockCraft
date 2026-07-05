@@ -14,9 +14,10 @@ export class WorldRenderer {
     this.meshes = new Map(); // chunk key -> { solid: Mesh|null, water: Mesh|null }
 
     const atlas = createAtlasTexture();
-    this.solidMaterial = new THREE.MeshLambertMaterial({ map: atlas });
+    this.solidMaterial = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true });
     this.waterMaterial = new THREE.MeshLambertMaterial({
       map: atlas,
+      vertexColors: true,
       transparent: true,
       opacity: 0.7,
       depthWrite: false,
@@ -95,6 +96,7 @@ export class WorldRenderer {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(bucket.positions, 3));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(bucket.normals, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(bucket.uvs, 2));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(bucket.colors, 3));
     geometry.setIndex(bucket.indices);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = true;

@@ -28,8 +28,9 @@ const camera = new THREE.PerspectiveCamera(
   1000,
 );
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+// Sky/ground hemisphere gives cooler shade in shadows than flat ambient.
+scene.add(new THREE.HemisphereLight(0xd8ecff, 0x9a7f5e, 0.75));
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.15);
 sun.position.set(60, 100, 40);
 scene.add(sun);
 
@@ -53,6 +54,22 @@ const interaction = new BlockInteraction(world, controls, player, hotbar, scene)
 const crosshair = document.createElement('div');
 crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
+
+const hud = document.createElement('div');
+hud.id = 'hud';
+document.body.appendChild(hud);
+let hudFrames = 0;
+let hudLast = performance.now();
+function updateHud(now) {
+  hudFrames++;
+  if (now - hudLast < 500) return;
+  const fps = Math.round((hudFrames * 1000) / (now - hudLast));
+  hudFrames = 0;
+  hudLast = now;
+  const { x, y, z } = player.pos;
+  hud.textContent =
+    `${fps} fps | XYZ ${x.toFixed(1)} / ${y.toFixed(1)} / ${z.toFixed(1)} | seed ${world.seed}`;
+}
 
 // --- Overlay (click to play) ----------------------------------------------
 
@@ -100,5 +117,6 @@ renderer.setAnimationLoop((now) => {
   worldRenderer.pruneBeyond(pcx, pcz, VIEW_RADIUS + 1);
   worldRenderer.update(2, pcx, pcz, VIEW_RADIUS);
 
+  updateHud(now);
   renderer.render(scene, camera);
 });
