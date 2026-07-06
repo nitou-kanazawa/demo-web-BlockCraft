@@ -18,6 +18,8 @@ export const TILE = {
   WATER: 8,
   PLANK: 9,
   BRICK: 10,
+  TABLE_TOP: 11,
+  TABLE_SIDE: 12,
 };
 
 // Face order: nx, px, ny (bottom), py (top), nz, pz.
@@ -104,6 +106,10 @@ export function blockFaceTile(blockId, faceIndex) {
     case BLOCK.WATER: return TILE.WATER;
     case BLOCK.PLANK: return TILE.PLANK;
     case BLOCK.BRICK: return TILE.BRICK;
+    case BLOCK.CRAFTING_TABLE:
+      if (faceIndex === FACE_PY) return TILE.TABLE_TOP;
+      if (faceIndex === FACE_NY) return TILE.PLANK;
+      return TILE.TABLE_SIDE;
     default: return TILE.STONE;
   }
 }

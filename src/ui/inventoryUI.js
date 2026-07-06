@@ -1,10 +1,12 @@
-import { HOTBAR_SIZE, INVENTORY_SIZE } from '../core/inventory.js';
-import { itemInfo } from '../core/items.js';
+import { Inventory, HOTBAR_SIZE, INVENTORY_SIZE } from '../core/inventory.js';
+import { itemInfo, maxStackOf } from '../core/items.js';
 import { BLOCK } from '../core/blocks.js';
 import { itemIconUrl } from './itemIcons.js';
+import { matchRecipe, consumeGrid } from '../core/crafting.js';
 
 // DOM UI for the inventory: always-visible hotbar + toggleable panel (E key)
-// with click-to-move stacks. Rendering is a cheap full refresh per frame.
+// with click-to-move stacks and a crafting grid (2x2 from the inventory,
+// 3x3 when opened at a crafting table).
 
 // Representative colors (roughly matching the texture atlas).
 const SWATCH = {
@@ -16,6 +18,7 @@ const SWATCH = {
   [BLOCK.LEAVES]: '#2d6b1f',
   [BLOCK.PLANK]: '#b08d55',
   [BLOCK.BRICK]: '#9c4a38',
+  [BLOCK.CRAFTING_TABLE]: '#8a6a3a',
 };
 
 /** Visual for one item stack: color swatch for blocks, icon for the rest. */
@@ -57,6 +60,8 @@ export class InventoryUI {
     this.controls = controls;
     this.open = false;
     this.cursor = null; // stack held on the mouse cursor inside the panel
+    this.craftInv = null; // Inventory(4|9) while the panel is open
+    this.craftWidth = 2;
 
     // Hotbar (always visible).
     this.hotbarRoot = document.createElement('div');
@@ -73,10 +78,30 @@ export class InventoryUI {
     }
     document.body.appendChild(this.hotbarRoot);
 
-    // Panel (toggled with E).
+    // Panel (toggled with E / opened by a crafting table).
     this.panel = document.createElement('div');
     this.panel.id = 'inventory';
-    this.panel.innerHTML = '<div class="inv-title">インベントリ (E で閉じる)</div>';
+    this.title = document.createElement('div');
+    this.title.className = 'inv-title';
+    this.panel.appendChild(this.title);
+
+    // Crafting area: grid + arrow + result slot.
+    this.craftArea = document.createElement('div');
+    this.craftArea.className = 'craft-area';
+    this.craftGridEl = document.createElement('div');
+    this.craftGridEl.className = 'craft-grid';
+    const arrow = document.createElement('div');
+    arrow.className = 'craft-arrow';
+    arrow.textContent = '→';
+    this.resultSlot = makeSlot('craft-result');
+    this.resultSlot.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      this.takeResult();
+    });
+    this.craftArea.append(this.craftGridEl, arrow, this.resultSlot);
+    this.panel.appendChild(this.craftArea);
+    this.craftSlots = [];
+
     this.grid = document.createElement('div');
     this.grid.className = 'inv-grid';
     this.panelSlots = [];
@@ -107,7 +132,8 @@ export class InventoryUI {
 
     document.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE' && (this.controls.locked || this.open)) {
-        this.toggle();
+        if (this.open) this.close();
+        else this.openPanel(2);
         return;
       }
       if (this.open || !this.controls.locked) return;
@@ -122,19 +148,70 @@ export class InventoryUI {
     });
   }
 
-  toggle() {
-    this.open = !this.open;
-    this.panel.style.display = this.open ? 'block' : 'none';
-    if (this.open) {
-      document.exitPointerLock();
-    } else {
-      // Drop the cursor stack back into the inventory when closing.
-      if (this.cursor) {
-        this.inventory.add(this.cursor.id, this.cursor.count);
-        this.cursor = null;
-      }
-      this.controls.domElement.requestPointerLock();
+  /** Open the panel with a `width` x `width` crafting grid (2 or 3). */
+  openPanel(width) {
+    if (this.open) return;
+    this.open = true;
+    this.craftWidth = width;
+    this.craftInv = new Inventory(width * width);
+    this.title.textContent =
+      width === 3 ? '作業台 (E で閉じる)' : 'インベントリ (E で閉じる)';
+
+    this.craftGridEl.innerHTML = '';
+    this.craftGridEl.style.gridTemplateColumns = `repeat(${width}, 44px)`;
+    this.craftSlots = [];
+    for (let i = 0; i < width * width; i++) {
+      const slot = makeSlot('craft-slot');
+      slot.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.cursor = this.craftInv.clickSlot(i, this.cursor);
+      });
+      this.craftGridEl.appendChild(slot);
+      this.craftSlots.push(slot);
     }
+
+    this.panel.style.display = 'block';
+    document.exitPointerLock();
+  }
+
+  close() {
+    if (!this.open) return;
+    this.open = false;
+    // Return crafting materials and the cursor stack to the inventory.
+    for (const s of this.craftInv.slots) {
+      if (s) this.inventory.add(s.id, s.count);
+    }
+    this.craftInv = null;
+    if (this.cursor) {
+      this.inventory.add(this.cursor.id, this.cursor.count);
+      this.cursor = null;
+    }
+    this.panel.style.display = 'none';
+    this.controls.domElement.requestPointerLock();
+  }
+
+  /** Current craft result stack, or null. */
+  get craftResult() {
+    if (!this.craftInv) return null;
+    const ids = this.craftInv.slots.map((s) => (s ? s.id : null));
+    return matchRecipe(ids, this.craftWidth);
+  }
+
+  /** Click on the result slot: craft once onto the cursor. */
+  takeResult() {
+    const result = this.craftResult;
+    if (!result) return;
+    if (!this.cursor) {
+      this.cursor = { id: result.id, count: result.count };
+    } else if (
+      this.cursor.id === result.id
+      && this.cursor.count + result.count <= maxStackOf(result.id)
+    ) {
+      this.cursor.count += result.count;
+    } else {
+      return; // cursor holds something incompatible
+    }
+    consumeGrid(this.craftInv);
   }
 
   /** Refresh all slot visuals; call once per frame. */
@@ -147,6 +224,10 @@ export class InventoryUI {
       for (let i = 0; i < INVENTORY_SIZE; i++) {
         paintSlot(this.panelSlots[i], this.inventory.get(i));
       }
+      for (let i = 0; i < this.craftSlots.length; i++) {
+        paintSlot(this.craftSlots[i], this.craftInv.get(i));
+      }
+      paintSlot(this.resultSlot, this.craftResult);
     }
     this.cursorEl.style.display = this.open && this.cursor ? 'flex' : 'none';
     if (this.cursor) paintSlot(this.cursorEl, this.cursor);

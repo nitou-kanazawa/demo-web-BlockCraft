@@ -67,6 +67,28 @@ const TILE_PAINTERS = {
       ctx.fillRect(x + ((i * 24 + 8) % TILE_PX), y + i * 16, 2, 16);
     }
   },
+  [TILE.TABLE_TOP]: (ctx, x, y, rand) => {
+    TILE_PAINTERS[TILE.PLANK](ctx, x, y, rand);
+    // Dark work-surface square with a grid, framed by the plank border.
+    ctx.fillStyle = '#7a5c33';
+    ctx.fillRect(x + 10, y + 10, TILE_PX - 20, TILE_PX - 20);
+    ctx.strokeStyle = '#4e3a1e';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 10, y + 10, TILE_PX - 20, TILE_PX - 20);
+    ctx.beginPath();
+    ctx.moveTo(x + TILE_PX / 2, y + 10);
+    ctx.lineTo(x + TILE_PX / 2, y + TILE_PX - 10);
+    ctx.moveTo(x + 10, y + TILE_PX / 2);
+    ctx.lineTo(x + TILE_PX - 10, y + TILE_PX / 2);
+    ctx.stroke();
+  },
+  [TILE.TABLE_SIDE]: (ctx, x, y, rand) => {
+    TILE_PAINTERS[TILE.PLANK](ctx, x, y, rand);
+    // Tool silhouettes: two dark squares like the Minecraft table side.
+    ctx.fillStyle = '#4e3a1e';
+    ctx.fillRect(x + 12, y + 14, 14, 14);
+    ctx.fillRect(x + 38, y + 14, 14, 14);
+  },
   [TILE.BRICK]: (ctx, x, y, rand) => {
     ctx.fillStyle = '#9c4a38';
     ctx.fillRect(x, y, TILE_PX, TILE_PX);

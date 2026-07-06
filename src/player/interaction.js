@@ -114,6 +114,11 @@ export class BlockInteraction {
 
   placeBlock() {
     if (!this.hit) return;
+    // Interactable blocks (crafting table) take priority over placing.
+    if (this.onUseBlock) {
+      const target = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
+      if (this.onUseBlock(target)) return;
+    }
     const x = this.hit.x + this.hit.nx;
     const y = this.hit.y + this.hit.ny;
     const z = this.hit.z + this.hit.nz;
