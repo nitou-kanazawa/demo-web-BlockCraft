@@ -84,6 +84,25 @@
       width: 16px;
       height: 2px;
     }
+    #break-progress {
+      position: fixed;
+      left: 50%;
+      top: calc(50% + 18px);
+      transform: translateX(-50%);
+      width: 60px;
+      height: 6px;
+      display: none;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    #break-progress .fill {
+      height: 100%;
+      width: 0;
+      background: #fff;
+      border-radius: 2px;
+    }
     .slot {
       position: relative;
       width: 44px;
