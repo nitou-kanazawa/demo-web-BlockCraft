@@ -5,7 +5,8 @@ import { CHUNK_SIZE, CHUNK_HEIGHT } from './core/chunk.js';
 import { PLAYER, createPlayerState, stepPlayer } from './core/physics.js';
 import { PlayerControls } from './player/controls.js';
 import { BlockInteraction } from './player/interaction.js';
-import { Hotbar } from './ui/hotbar.js';
+import { Inventory } from './core/inventory.js';
+import { InventoryUI } from './ui/inventoryUI.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
 const MAX_DT = 0.05; // clamp long frames (tab switch etc.)
@@ -48,12 +49,16 @@ const player = createPlayerState(spawnX, spawnY, spawnZ);
 
 const controls = new PlayerControls(renderer.domElement);
 const isSolidAt = (x, y, z) => world.isSolidAt(x, y, z);
-const hotbar = new Hotbar();
-const interaction = new BlockInteraction(world, controls, player, hotbar, scene);
+const inventory = new Inventory();
+const inventoryUI = new InventoryUI(inventory, controls);
+const interaction = new BlockInteraction(world, controls, player, inventory, scene);
 
 const crosshair = document.createElement('div');
 crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
+
+// Debug / test handle (used by the headless browser checks).
+window.blockcraft = { world, player, inventory, interaction, controls };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
@@ -79,11 +84,13 @@ overlay.innerHTML = `
   <div class="panel">
     <h1>BlockCraft</h1>
     <p>クリックで開始（ポインタロック）</p>
-    <p class="keys">WASD: 移動 / Space: ジャンプ / マウス: 視点 / Esc: 解除</p>
+    <p class="keys">WASD: 移動 / Space: ジャンプ / マウス: 視点 / E: インベントリ / Esc: 解除</p>
   </div>`;
 document.body.appendChild(overlay);
 controls.onLockChange = (locked) => {
-  overlay.style.display = locked ? 'none' : 'flex';
+  // Keep the start overlay hidden while the inventory panel is open —
+  // opening it intentionally releases pointer lock.
+  overlay.style.display = locked || inventoryUI.open ? 'none' : 'flex';
 };
 overlay.addEventListener('click', () => renderer.domElement.click());
 
@@ -118,5 +125,6 @@ renderer.setAnimationLoop((now) => {
   worldRenderer.update(2, pcx, pcz, VIEW_RADIUS);
 
   updateHud(now);
+  inventoryUI.render();
   renderer.render(scene, camera);
 });
