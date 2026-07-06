@@ -4,14 +4,15 @@ import { raycastVoxels } from '../core/raycast.js';
 import { playerIntersectsVoxel } from '../core/physics.js';
 import { CHUNK_HEIGHT } from '../core/chunk.js';
 import { blockDrop } from '../core/items.js';
+import { breakDuration, MiningTracker } from '../core/breaking.js';
 
 const REACH = 5; // max targeting distance in blocks
 
 /**
- * Break / place blocks with the mouse and highlight the targeted block.
- * Left click: break (the drop goes into the inventory). Right click: place
- * one item from the selected hotbar slot against the targeted face
- * (refused inside the player or out of world bounds).
+ * Mine / place blocks with the mouse and highlight the targeted block.
+ * Hold left: mine the targeted block (time depends on block hardness and
+ * the held tool); the drop goes into the inventory. Right click: place one
+ * item from the selected hotbar slot against the targeted face.
  */
 export class BlockInteraction {
   constructor(world, controls, player, inventory, scene) {
@@ -20,6 +21,8 @@ export class BlockInteraction {
     this.player = player;
     this.inventory = inventory;
     this.hit = null;
+    this.mining = false; // left button held
+    this.tracker = new MiningTracker();
 
     this.highlight = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)),
@@ -28,16 +31,38 @@ export class BlockInteraction {
     this.highlight.visible = false;
     scene.add(this.highlight);
 
+    // Darkening overlay on the mined block, opacity follows progress.
+    this.crack = new THREE.Mesh(
+      new THREE.BoxGeometry(1.004, 1.004, 1.004),
+      new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    this.crack.visible = false;
+    scene.add(this.crack);
+
+    // Progress bar under the crosshair.
+    this.progressEl = document.createElement('div');
+    this.progressEl.id = 'break-progress';
+    this.progressEl.innerHTML = '<div class="fill"></div>';
+    document.body.appendChild(this.progressEl);
+
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('mousedown', (e) => {
       if (!controls.locked) return;
-      if (e.button === 0) this.breakBlock();
+      if (e.button === 0) this.mining = true;
       else if (e.button === 2) this.placeBlock();
+    });
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 0) this.mining = false;
     });
   }
 
-  /** Recompute the targeted block from the camera; call once per frame. */
-  update(camera) {
+  /** Retarget, advance mining progress, refresh visuals. Call once per frame. */
+  update(camera, dt) {
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     this.hit = raycastVoxels(
@@ -46,11 +71,36 @@ export class BlockInteraction {
       dir,
       REACH,
     );
+
+    let duration = Infinity;
+    let targetKey = null;
     if (this.hit) {
       this.highlight.position.set(this.hit.x + 0.5, this.hit.y + 0.5, this.hit.z + 0.5);
       this.highlight.visible = true;
+      targetKey = `${this.hit.x},${this.hit.y},${this.hit.z}`;
+      duration = breakDuration(
+        this.world.getBlock(this.hit.x, this.hit.y, this.hit.z),
+        this.inventory.selectedStack?.id ?? null,
+      );
     } else {
       this.highlight.visible = false;
+    }
+
+    const active = this.mining && this.controls.locked;
+    if (this.tracker.update(active, targetKey, duration, dt)) {
+      this.breakBlock();
+    }
+
+    const progress = this.tracker.progress;
+    if (progress > 0 && this.hit) {
+      this.crack.position.copy(this.highlight.position);
+      this.crack.material.opacity = 0.15 + progress * 0.45;
+      this.crack.visible = true;
+      this.progressEl.style.display = 'block';
+      this.progressEl.querySelector('.fill').style.width = `${Math.round(progress * 100)}%`;
+    } else {
+      this.crack.visible = false;
+      this.progressEl.style.display = 'none';
     }
   }
 

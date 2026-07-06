@@ -17,17 +17,20 @@ export const BLOCK = {
 // Per-block properties.
 //   solid:       participates in collision and hides neighbouring faces
 //   transparent: rendered but does not fully hide neighbour faces
+//   hardness:    bare-hand break time in seconds (Infinity = unbreakable)
+//   toolClass:   tool type that mines this block faster ('pickaxe' | 'axe'
+//                | 'shovel' | null)
 export const BLOCK_INFO = {
-  [BLOCK.AIR]: { name: 'air', solid: false, transparent: true },
-  [BLOCK.GRASS]: { name: 'grass', solid: true, transparent: false },
-  [BLOCK.DIRT]: { name: 'dirt', solid: true, transparent: false },
-  [BLOCK.STONE]: { name: 'stone', solid: true, transparent: false },
-  [BLOCK.SAND]: { name: 'sand', solid: true, transparent: false },
-  [BLOCK.WOOD]: { name: 'wood', solid: true, transparent: false },
-  [BLOCK.LEAVES]: { name: 'leaves', solid: true, transparent: true },
-  [BLOCK.WATER]: { name: 'water', solid: false, transparent: true },
-  [BLOCK.PLANK]: { name: 'plank', solid: true, transparent: false },
-  [BLOCK.BRICK]: { name: 'brick', solid: true, transparent: false },
+  [BLOCK.AIR]: { name: 'air', solid: false, transparent: true, hardness: Infinity, toolClass: null },
+  [BLOCK.GRASS]: { name: 'grass', solid: true, transparent: false, hardness: 0.9, toolClass: 'shovel' },
+  [BLOCK.DIRT]: { name: 'dirt', solid: true, transparent: false, hardness: 0.75, toolClass: 'shovel' },
+  [BLOCK.STONE]: { name: 'stone', solid: true, transparent: false, hardness: 4.0, toolClass: 'pickaxe' },
+  [BLOCK.SAND]: { name: 'sand', solid: true, transparent: false, hardness: 0.75, toolClass: 'shovel' },
+  [BLOCK.WOOD]: { name: 'wood', solid: true, transparent: false, hardness: 2.5, toolClass: 'axe' },
+  [BLOCK.LEAVES]: { name: 'leaves', solid: true, transparent: true, hardness: 0.3, toolClass: null },
+  [BLOCK.WATER]: { name: 'water', solid: false, transparent: true, hardness: Infinity, toolClass: null },
+  [BLOCK.PLANK]: { name: 'plank', solid: true, transparent: false, hardness: 2.5, toolClass: 'axe' },
+  [BLOCK.BRICK]: { name: 'brick', solid: true, transparent: false, hardness: 4.5, toolClass: 'pickaxe' },
 };
 
 export function isSolid(id) {

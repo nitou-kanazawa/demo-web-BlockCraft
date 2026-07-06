@@ -116,7 +116,7 @@ renderer.setAnimationLoop((now) => {
     }
   }
   controls.applyToCamera(camera, player.pos, PLAYER.EYE);
-  interaction.update(camera);
+  interaction.update(camera, dt);
 
   const pcx = Math.floor(player.pos.x / CHUNK_SIZE);
   const pcz = Math.floor(player.pos.z / CHUNK_SIZE);
