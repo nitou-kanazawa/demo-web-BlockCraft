@@ -8,6 +8,8 @@ import { PlayerControls } from './player/controls.js';
 import { BlockInteraction } from './player/interaction.js';
 import { Inventory } from './core/inventory.js';
 import { InventoryUI } from './ui/inventoryUI.js';
+import { MobManager } from './core/mobs.js';
+import { MobRenderer } from './render/mobRenderer.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
 const MAX_DT = 0.05; // clamp long frames (tab switch etc.)
@@ -59,12 +61,15 @@ interaction.onUseBlock = (blockId) => {
   return true;
 };
 
+const mobManager = new MobManager(world, world.seed ^ 0x5eed);
+const mobRenderer = new MobRenderer(scene);
+
 const crosshair = document.createElement('div');
 crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
 
 // Debug / test handle (used by the headless browser checks).
-window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls };
+window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
@@ -129,6 +134,9 @@ renderer.setAnimationLoop((now) => {
   worldRenderer.ensureRadius(pcx, pcz, VIEW_RADIUS);
   worldRenderer.pruneBeyond(pcx, pcz, VIEW_RADIUS + 1);
   worldRenderer.update(2, pcx, pcz, VIEW_RADIUS);
+
+  mobManager.update(dt, player.pos);
+  mobRenderer.sync(mobManager.mobs);
 
   updateHud(now);
   inventoryUI.render();
