@@ -3,20 +3,22 @@ import { BLOCK, isSolid } from '../core/blocks.js';
 import { raycastVoxels } from '../core/raycast.js';
 import { playerIntersectsVoxel } from '../core/physics.js';
 import { CHUNK_HEIGHT } from '../core/chunk.js';
+import { blockDrop } from '../core/items.js';
 
 const REACH = 5; // max targeting distance in blocks
 
 /**
  * Break / place blocks with the mouse and highlight the targeted block.
- * Left click: break. Right click: place the hotbar's selected block against
- * the targeted face (refused inside the player or out of world bounds).
+ * Left click: break (the drop goes into the inventory). Right click: place
+ * one item from the selected hotbar slot against the targeted face
+ * (refused inside the player or out of world bounds).
  */
 export class BlockInteraction {
-  constructor(world, controls, player, hotbar, scene) {
+  constructor(world, controls, player, inventory, scene) {
     this.world = world;
     this.controls = controls;
     this.player = player;
-    this.hotbar = hotbar;
+    this.inventory = inventory;
     this.hit = null;
 
     this.highlight = new THREE.LineSegments(
@@ -54,7 +56,10 @@ export class BlockInteraction {
 
   breakBlock() {
     if (!this.hit) return;
+    const broken = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
     this.world.setBlock(this.hit.x, this.hit.y, this.hit.z, BLOCK.AIR);
+    const drop = blockDrop(broken);
+    if (drop !== null) this.inventory.add(drop, 1);
   }
 
   placeBlock() {
@@ -66,6 +71,8 @@ export class BlockInteraction {
     const occupant = this.world.getBlock(x, y, z);
     if (occupant !== BLOCK.AIR && occupant !== BLOCK.WATER) return;
     if (playerIntersectsVoxel(this.player.pos, x, y, z)) return;
-    this.world.setBlock(x, y, z, this.hotbar.selectedBlock);
+    const block = this.inventory.consumeSelectedBlock();
+    if (block === null) return;
+    this.world.setBlock(x, y, z, block);
   }
 }
