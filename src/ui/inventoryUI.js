@@ -1,6 +1,7 @@
 import { HOTBAR_SIZE, INVENTORY_SIZE } from '../core/inventory.js';
 import { itemInfo } from '../core/items.js';
 import { BLOCK } from '../core/blocks.js';
+import { itemIconUrl } from './itemIcons.js';
 
 // DOM UI for the inventory: always-visible hotbar + toggleable panel (E key)
 // with click-to-move stacks. Rendering is a cheap full refresh per frame.
@@ -17,13 +18,14 @@ const SWATCH = {
   [BLOCK.BRICK]: '#9c4a38',
 };
 
-/** Visual for one item stack; extended by later tasks (tools). */
+/** Visual for one item stack: color swatch for blocks, icon for the rest. */
 export function stackVisual(stack) {
-  if (!stack) return { swatch: null, icon: '', label: '' };
+  if (!stack) return { swatch: null, iconUrl: null, label: '' };
   const info = itemInfo(stack.id);
+  const iconUrl = itemIconUrl(stack.id);
   return {
-    swatch: SWATCH[stack.id] ?? '#777',
-    icon: info?.icon ?? '',
+    swatch: iconUrl ? null : SWATCH[stack.id] ?? '#777',
+    iconUrl,
     label: info?.name ?? '?',
   };
 }
@@ -40,12 +42,13 @@ function makeSlot(className) {
 }
 
 function paintSlot(el, stack) {
-  const { swatch, icon } = stackVisual(stack);
+  const { swatch, iconUrl, label } = stackVisual(stack);
   el.style.setProperty('--swatch', swatch ?? 'transparent');
   el.classList.toggle('empty', !stack);
-  el.querySelector('.icon').textContent = icon;
+  const iconEl = el.querySelector('.icon');
+  iconEl.style.backgroundImage = iconUrl ? `url(${iconUrl})` : 'none';
   el.querySelector('.count').textContent = stack && stack.count > 1 ? stack.count : '';
-  el.title = stack ? stackVisual(stack).label : '';
+  el.title = label;
 }
 
 export class InventoryUI {

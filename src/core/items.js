@@ -13,6 +13,14 @@ export const ITEM = {
   LEAVES: BLOCK.LEAVES,
   PLANK: BLOCK.PLANK,
   BRICK: BLOCK.BRICK,
+  // Non-block items (100+)
+  STICK: 100,
+  WOOD_PICKAXE: 101,
+  WOOD_AXE: 102,
+  WOOD_SHOVEL: 103,
+  STONE_PICKAXE: 104,
+  STONE_AXE: 105,
+  STONE_SHOVEL: 106,
 };
 
 export const ITEM_INFO = {
@@ -24,6 +32,15 @@ export const ITEM_INFO = {
   [ITEM.LEAVES]: { name: 'leaves', kind: 'block', block: BLOCK.LEAVES, maxStack: 64 },
   [ITEM.PLANK]: { name: 'plank', kind: 'block', block: BLOCK.PLANK, maxStack: 64 },
   [ITEM.BRICK]: { name: 'brick', kind: 'block', block: BLOCK.BRICK, maxStack: 64 },
+  // Materials
+  [ITEM.STICK]: { name: 'stick', kind: 'material', maxStack: 64 },
+  // Tools: `speed` divides the matching block's hardness (see breaking.js).
+  [ITEM.WOOD_PICKAXE]: { name: 'wood pickaxe', kind: 'tool', toolClass: 'pickaxe', speed: 3, maxStack: 1 },
+  [ITEM.WOOD_AXE]: { name: 'wood axe', kind: 'tool', toolClass: 'axe', speed: 3, maxStack: 1 },
+  [ITEM.WOOD_SHOVEL]: { name: 'wood shovel', kind: 'tool', toolClass: 'shovel', speed: 3, maxStack: 1 },
+  [ITEM.STONE_PICKAXE]: { name: 'stone pickaxe', kind: 'tool', toolClass: 'pickaxe', speed: 6, maxStack: 1 },
+  [ITEM.STONE_AXE]: { name: 'stone axe', kind: 'tool', toolClass: 'axe', speed: 6, maxStack: 1 },
+  [ITEM.STONE_SHOVEL]: { name: 'stone shovel', kind: 'tool', toolClass: 'shovel', speed: 6, maxStack: 1 },
 };
 
 export function itemInfo(id) {
