@@ -13,6 +13,7 @@ export const ITEM = {
   LEAVES: BLOCK.LEAVES,
   PLANK: BLOCK.PLANK,
   BRICK: BLOCK.BRICK,
+  CRAFTING_TABLE: BLOCK.CRAFTING_TABLE,
   // Non-block items (100+)
   STICK: 100,
   WOOD_PICKAXE: 101,
@@ -32,6 +33,7 @@ export const ITEM_INFO = {
   [ITEM.LEAVES]: { name: 'leaves', kind: 'block', block: BLOCK.LEAVES, maxStack: 64 },
   [ITEM.PLANK]: { name: 'plank', kind: 'block', block: BLOCK.PLANK, maxStack: 64 },
   [ITEM.BRICK]: { name: 'brick', kind: 'block', block: BLOCK.BRICK, maxStack: 64 },
+  [ITEM.CRAFTING_TABLE]: { name: 'crafting table', kind: 'block', block: BLOCK.CRAFTING_TABLE, maxStack: 64 },
   // Materials
   [ITEM.STICK]: { name: 'stick', kind: 'material', maxStack: 64 },
   // Tools: `speed` divides the matching block's hardness (see breaking.js).

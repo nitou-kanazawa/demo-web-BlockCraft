@@ -7,8 +7,9 @@ export const INVENTORY_SIZE = 36;
 export const HOTBAR_SIZE = 9;
 
 export class Inventory {
-  constructor() {
-    this.slots = new Array(INVENTORY_SIZE).fill(null);
+  /** `size` defaults to the player inventory; crafting grids pass 4 or 9. */
+  constructor(size = INVENTORY_SIZE) {
+    this.slots = new Array(size).fill(null);
     this.selected = 0; // selected hotbar index
   }
 
@@ -28,7 +29,7 @@ export class Inventory {
     if (!itemInfo(id)) return count;
     const max = maxStackOf(id);
     let left = count;
-    for (let i = 0; i < INVENTORY_SIZE && left > 0; i++) {
+    for (let i = 0; i < this.slots.length && left > 0; i++) {
       const s = this.slots[i];
       if (s && s.id === id && s.count < max) {
         const take = Math.min(max - s.count, left);
@@ -36,7 +37,7 @@ export class Inventory {
         left -= take;
       }
     }
-    for (let i = 0; i < INVENTORY_SIZE && left > 0; i++) {
+    for (let i = 0; i < this.slots.length && left > 0; i++) {
       if (!this.slots[i]) {
         const take = Math.min(max, left);
         this.slots[i] = { id, count: take };

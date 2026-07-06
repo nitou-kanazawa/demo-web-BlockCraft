@@ -12,6 +12,7 @@ export const BLOCK = {
   WATER: 7,
   PLANK: 8,
   BRICK: 9,
+  CRAFTING_TABLE: 10,
 };
 
 // Per-block properties.
@@ -31,6 +32,7 @@ export const BLOCK_INFO = {
   [BLOCK.WATER]: { name: 'water', solid: false, transparent: true, hardness: Infinity, toolClass: null },
   [BLOCK.PLANK]: { name: 'plank', solid: true, transparent: false, hardness: 2.5, toolClass: 'axe' },
   [BLOCK.BRICK]: { name: 'brick', solid: true, transparent: false, hardness: 4.5, toolClass: 'pickaxe' },
+  [BLOCK.CRAFTING_TABLE]: { name: 'crafting table', solid: true, transparent: false, hardness: 2.5, toolClass: 'axe' },
 };
 
 export function isSolid(id) {

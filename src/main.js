@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { World } from './core/world.js';
 import { WorldRenderer } from './render/worldRenderer.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './core/chunk.js';
+import { BLOCK } from './core/blocks.js';
 import { PLAYER, createPlayerState, stepPlayer } from './core/physics.js';
 import { PlayerControls } from './player/controls.js';
 import { BlockInteraction } from './player/interaction.js';
@@ -52,13 +53,18 @@ const isSolidAt = (x, y, z) => world.isSolidAt(x, y, z);
 const inventory = new Inventory();
 const inventoryUI = new InventoryUI(inventory, controls);
 const interaction = new BlockInteraction(world, controls, player, inventory, scene);
+interaction.onUseBlock = (blockId) => {
+  if (blockId !== BLOCK.CRAFTING_TABLE) return false;
+  inventoryUI.openPanel(3);
+  return true;
+};
 
 const crosshair = document.createElement('div');
 crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
 
 // Debug / test handle (used by the headless browser checks).
-window.blockcraft = { world, player, inventory, interaction, controls };
+window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
