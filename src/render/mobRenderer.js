@@ -8,12 +8,10 @@ const PALETTES = {
   sheep: { body: 0xe8e6e0, head: 0x3a3a3a, legs: 0x3a3a3a, snout: 0x555555 },
 };
 
-const materialCache = new Map();
+// Materials are per-model instances (not shared) so the hurt flash can
+// tint one mob without affecting the others.
 function material(color) {
-  if (!materialCache.has(color)) {
-    materialCache.set(color, new THREE.MeshLambertMaterial({ color }));
-  }
-  return materialCache.get(color);
+  return new THREE.MeshLambertMaterial({ color });
 }
 
 const geometryCache = new Map();
@@ -33,18 +31,22 @@ function buildModel(type) {
   const palette = PALETTES[type];
   const tall = type === 'sheep' ? 0.15 : 0; // sheep stand a little higher
   const root = new THREE.Group();
+  const materials = [];
 
   const bodyMesh = new THREE.Mesh(box(0.55, 0.45, 0.9), material(palette.body));
   bodyMesh.position.set(0, 0.5 + tall, 0);
   root.add(bodyMesh);
+  materials.push(bodyMesh.material);
 
   const head = new THREE.Mesh(box(0.4, 0.4, 0.3), material(palette.head));
   head.position.set(0, 0.72 + tall, 0.55);
   root.add(head);
+  materials.push(head.material);
 
   const snout = new THREE.Mesh(box(0.18, 0.14, 0.06), material(palette.snout));
   snout.position.set(0, 0.66 + tall, 0.73);
   root.add(snout);
+  materials.push(snout.material);
 
   const legs = [];
   const legGeo = box(0.16, 0.32 + tall, 0.16);
@@ -57,8 +59,9 @@ function buildModel(type) {
     hip.add(leg);
     root.add(hip);
     legs.push(hip);
+    materials.push(leg.material);
   }
-  return { root, legs };
+  return { root, legs, materials };
 }
 
 export class MobRenderer {
@@ -85,11 +88,17 @@ export class MobRenderer {
       model.legs[1].rotation.x = -swing;
       model.legs[2].rotation.x = -swing;
       model.legs[3].rotation.x = swing;
+      // Red hurt flash while stunned.
+      const hurt = mob.hurtTimer > 0;
+      for (const mat of model.materials) {
+        mat.emissive.setRGB(hurt ? 0.45 : 0, 0, 0);
+      }
     }
     for (const [id, model] of this.models) {
       if (!seen.has(id)) {
         this.scene.remove(model.root);
-        this.models.delete(id); // geometry/materials are shared, no dispose
+        for (const mat of model.materials) mat.dispose(); // per-instance
+        this.models.delete(id); // geometry is shared, no dispose
       }
     }
   }

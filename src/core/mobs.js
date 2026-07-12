@@ -2,6 +2,7 @@ import { stepBody } from './physics.js';
 import { mulberry32 } from './noise.js';
 import { BLOCK } from './blocks.js';
 import { CHUNK_HEIGHT } from './chunk.js';
+import { ITEM } from './items.js';
 
 // Passive animal mobs: wander AI (idle <-> walk) on shared AABB physics.
 // Pure logic; rendering lives in render/mobRenderer.js.
@@ -9,10 +10,24 @@ import { CHUNK_HEIGHT } from './chunk.js';
 export const MOB_TYPES = {
   pig: {
     body: { width: 0.7, height: 0.8, speed: 1.6, jumpSpeed: 7.5, gravity: -26, terminal: -50 },
+    hp: 6,
+    drop: { id: ITEM.PORKCHOP, count: 1 },
+    color: '#eb9c9c', // hit/death particle color
   },
   sheep: {
     body: { width: 0.7, height: 1.0, speed: 1.3, jumpSpeed: 7.5, gravity: -26, terminal: -50 },
+    hp: 6,
+    drop: { id: ITEM.WOOL, count: 1 },
+    color: '#e8e6e0',
   },
+};
+
+export const ATTACK = {
+  REACH: 4, // blocks
+  DAMAGE_HAND: 2,
+  DAMAGE_TOOL: 3, // any held tool
+  KNOCKBACK: 6, // horizontal impulse, blocks/s
+  STUN: 0.35, // seconds of hurt-flash / knockback drift
 };
 
 export function createMob(type, x, y, z) {
@@ -27,7 +42,59 @@ export function createMob(type, x, y, z) {
     mode: 'idle', // 'idle' | 'walk'
     timer: 0.5,
     walkPhase: 0, // drives the leg swing animation
+    hp: MOB_TYPES[type].hp,
+    hurtTimer: 0, // >0 while flashing red / being knocked back
+    kb: { x: 0, z: 0 }, // knockback velocity while stunned
   };
+}
+
+/**
+ * Apply one hit to a mob: damage, red-flash stun and knockback impulse.
+ * Returns true if the mob died.
+ */
+export function attackMob(mob, damage, kbX, kbZ) {
+  mob.hp -= damage;
+  mob.hurtTimer = ATTACK.STUN;
+  mob.kb = { x: kbX, z: kbZ };
+  mob.vel.y = Math.max(mob.vel.y, 4); // pop up a little
+  mob.onGround = false;
+  return mob.hp <= 0;
+}
+
+/** Ray vs AABB (slab method); distance along `dir` (unit), or null. */
+function rayAABB(origin, dir, min, max) {
+  let tmin = 0;
+  let tmax = Infinity;
+  for (const axis of ['x', 'y', 'z']) {
+    if (dir[axis] === 0) {
+      if (origin[axis] < min[axis] || origin[axis] > max[axis]) return null;
+      continue;
+    }
+    let t1 = (min[axis] - origin[axis]) / dir[axis];
+    let t2 = (max[axis] - origin[axis]) / dir[axis];
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tmin = Math.max(tmin, t1);
+    tmax = Math.min(tmax, t2);
+    if (tmin > tmax) return null;
+  }
+  return tmin;
+}
+
+/** Nearest mob whose AABB the ray hits within maxDist: {mob, dist} or null. */
+export function pickMob(mobs, origin, dir, maxDist) {
+  let best = null;
+  for (const mob of mobs) {
+    const half = mob.body.width / 2;
+    const t = rayAABB(origin, dir, {
+      x: mob.pos.x - half, y: mob.pos.y, z: mob.pos.z - half,
+    }, {
+      x: mob.pos.x + half, y: mob.pos.y + mob.body.height, z: mob.pos.z + half,
+    });
+    if (t !== null && t <= maxDist && (!best || t < best.dist)) {
+      best = { mob, dist: t };
+    }
+  }
+  return best;
 }
 
 /**
@@ -35,6 +102,21 @@ export function createMob(type, x, y, z) {
  * `rand` is a () => [0,1) source (seeded for determinism in tests).
  */
 export function stepMob(isSolidAt, mob, dt, rand) {
+  // Stunned: drift with the knockback impulse instead of walking.
+  if (mob.hurtTimer > 0) {
+    mob.hurtTimer -= dt;
+    const input = {
+      dirX: mob.kb.x / mob.body.speed,
+      dirZ: mob.kb.z / mob.body.speed,
+      jump: false,
+    };
+    stepBody(isSolidAt, mob, input, dt, mob.body);
+    const decay = Math.pow(0.01, dt / ATTACK.STUN);
+    mob.kb.x *= decay;
+    mob.kb.z *= decay;
+    return;
+  }
+
   mob.timer -= dt;
   if (mob.timer <= 0) {
     if (mob.mode === 'idle') {
@@ -99,6 +181,11 @@ export class MobManager {
       this.spawnCooldown = SPAWN_INTERVAL;
       this.trySpawn(playerPos);
     }
+  }
+
+  /** Remove a specific mob (killed by the player). */
+  remove(mob) {
+    this.mobs = this.mobs.filter((m) => m !== mob);
   }
 
   /** One spawn attempt at a random spot around the player; may do nothing. */

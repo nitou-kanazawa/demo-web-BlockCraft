@@ -20,6 +20,7 @@ export const TILE = {
   BRICK: 10,
   TABLE_TOP: 11,
   TABLE_SIDE: 12,
+  WOOL: 13,
 };
 
 // Face order: nx, px, ny (bottom), py (top), nz, pz.
@@ -110,6 +111,7 @@ export function blockFaceTile(blockId, faceIndex) {
       if (faceIndex === FACE_PY) return TILE.TABLE_TOP;
       if (faceIndex === FACE_NY) return TILE.PLANK;
       return TILE.TABLE_SIDE;
+    case BLOCK.WOOL: return TILE.WOOL;
     default: return TILE.STONE;
   }
 }

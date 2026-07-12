@@ -7,6 +7,8 @@ import { blockDrop } from '../core/items.js';
 import { breakDuration, MiningTracker } from '../core/breaking.js';
 import { soundForBlock, DIG_SOUND_INTERVAL } from '../core/soundDefs.js';
 import { BLOCK_COLORS } from '../core/blockColors.js';
+import { pickMob, attackMob, MOB_TYPES, ATTACK } from '../core/mobs.js';
+import { itemInfo } from '../core/items.js';
 
 const REACH = 5; // max targeting distance in blocks
 
@@ -27,6 +29,8 @@ export class BlockInteraction {
     this.tracker = new MiningTracker();
     this.sounds = null; // optional SoundPlayer, assigned by main
     this.particles = null; // optional ParticleRenderer, assigned by main
+    this.mobManager = null; // optional MobManager, assigned by main
+    this.lastRay = null; // camera ray cached by update() for click handlers
     this.digSoundTimer = 0;
 
     this.highlight = new THREE.LineSegments(
@@ -58,8 +62,12 @@ export class BlockInteraction {
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('mousedown', (e) => {
       if (!controls.locked) return;
-      if (e.button === 0) this.mining = true;
-      else if (e.button === 2) this.placeBlock();
+      if (e.button === 0) {
+        // A mob in front of the crosshair takes the hit; otherwise mine.
+        if (!this.tryAttack()) this.mining = true;
+      } else if (e.button === 2) {
+        this.placeBlock();
+      }
     });
     document.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mining = false;
@@ -70,6 +78,10 @@ export class BlockInteraction {
   update(camera, dt) {
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
+    this.lastRay = {
+      origin: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      dir: { x: dir.x, y: dir.y, z: dir.z },
+    };
     this.hit = raycastVoxels(
       (x, y, z) => isSolid(this.world.getBlock(x, y, z)),
       camera.position,
@@ -128,6 +140,45 @@ export class BlockInteraction {
       this.crack.visible = false;
       this.progressEl.style.display = 'none';
     }
+  }
+
+  /** Attack the mob under the crosshair. Returns true if a hit landed. */
+  tryAttack() {
+    if (!this.mobManager || !this.lastRay) return false;
+    const picked = pickMob(
+      this.mobManager.mobs, this.lastRay.origin, this.lastRay.dir, ATTACK.REACH,
+    );
+    if (!picked) return false;
+    // A block in front of the mob shields it.
+    if (this.hit && this.hit.dist < picked.dist) return false;
+
+    const { mob } = picked;
+    const held = itemInfo(this.inventory.selectedStack?.id ?? -1);
+    const damage = held?.kind === 'tool' ? ATTACK.DAMAGE_TOOL : ATTACK.DAMAGE_HAND;
+    const dx = mob.pos.x - this.player.pos.x;
+    const dz = mob.pos.z - this.player.pos.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const died = attackMob(mob, damage, (dx / len) * ATTACK.KNOCKBACK, (dz / len) * ATTACK.KNOCKBACK);
+
+    const center = {
+      x: mob.pos.x, y: mob.pos.y + mob.body.height / 2, z: mob.pos.z,
+    };
+    this.sounds?.play('hit');
+    this.particles?.burst({
+      ...center, count: 8, speed: 2, lifetime: 0.5,
+      color: MOB_TYPES[mob.type].color,
+    });
+    if (died) {
+      this.mobManager.remove(mob);
+      this.sounds?.play('mob_death');
+      this.particles?.burst({
+        ...center, count: 20, speed: 3, lifetime: 0.8,
+        color: MOB_TYPES[mob.type].color,
+      });
+      const drop = MOB_TYPES[mob.type].drop;
+      if (drop) this.inventory.add(drop.id, drop.count);
+    }
+    return true;
   }
 
   breakBlock() {

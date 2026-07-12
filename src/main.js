@@ -100,6 +100,7 @@ interaction.onUseBlock = (blockId) => {
 
 const mobManager = new MobManager(world, world.seed ^ 0x5eed);
 const mobRenderer = new MobRenderer(scene);
+interaction.mobManager = mobManager;
 
 const crosshair = document.createElement('div');
 crosshair.id = 'crosshair';

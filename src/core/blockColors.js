@@ -14,6 +14,7 @@ export const BLOCK_COLORS = {
   [BLOCK.PLANK]: '#b08d55',
   [BLOCK.BRICK]: '#9c4a38',
   [BLOCK.CRAFTING_TABLE]: '#8a6a3a',
+  [BLOCK.WOOL]: '#e8e6e0',
 };
 
 /** '#rrggbb' -> [r, g, b] in [0, 1]. */

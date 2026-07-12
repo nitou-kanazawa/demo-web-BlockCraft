@@ -89,6 +89,8 @@ const TILE_PAINTERS = {
     ctx.fillRect(x + 12, y + 14, 14, 14);
     ctx.fillRect(x + 38, y + 14, 14, 14);
   },
+  [TILE.WOOL]: (ctx, x, y, rand) =>
+    fillSpeckled(ctx, x, y, '#e8e6e0', ['#dcd9d1', '#f2f0ea', '#cfccc4'], rand, 320),
   [TILE.BRICK]: (ctx, x, y, rand) => {
     ctx.fillStyle = '#9c4a38';
     ctx.fillRect(x, y, TILE_PX, TILE_PX);
