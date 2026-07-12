@@ -1,25 +1,12 @@
 import { Inventory, HOTBAR_SIZE, INVENTORY_SIZE } from '../core/inventory.js';
 import { itemInfo, maxStackOf } from '../core/items.js';
-import { BLOCK } from '../core/blocks.js';
 import { itemIconUrl } from './itemIcons.js';
 import { matchRecipe, consumeGrid } from '../core/crafting.js';
+import { BLOCK_COLORS as SWATCH } from '../core/blockColors.js';
 
 // DOM UI for the inventory: always-visible hotbar + toggleable panel (E key)
 // with click-to-move stacks and a crafting grid (2x2 from the inventory,
 // 3x3 when opened at a crafting table).
-
-// Representative colors (roughly matching the texture atlas).
-const SWATCH = {
-  [BLOCK.GRASS]: '#4c9e3d',
-  [BLOCK.DIRT]: '#8a6244',
-  [BLOCK.STONE]: '#8d8d8d',
-  [BLOCK.SAND]: '#dbc681',
-  [BLOCK.WOOD]: '#6b4a2b',
-  [BLOCK.LEAVES]: '#2d6b1f',
-  [BLOCK.PLANK]: '#b08d55',
-  [BLOCK.BRICK]: '#9c4a38',
-  [BLOCK.CRAFTING_TABLE]: '#8a6a3a',
-};
 
 /** Visual for one item stack: color swatch for blocks, icon for the rest. */
 export function stackVisual(stack) {

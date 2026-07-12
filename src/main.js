@@ -14,6 +14,7 @@ import {
 } from './core/daynight.js';
 import { MobRenderer } from './render/mobRenderer.js';
 import { SoundPlayer } from './audio/soundPlayer.js';
+import { ParticleRenderer } from './render/particleRenderer.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
 const MAX_DT = 0.05; // clamp long frames (tab switch etc.)
@@ -89,6 +90,8 @@ const inventoryUI = new InventoryUI(inventory, controls);
 inventoryUI.sounds = sounds;
 const interaction = new BlockInteraction(world, controls, player, inventory, scene);
 interaction.sounds = sounds;
+const particles = new ParticleRenderer(scene);
+interaction.particles = particles;
 interaction.onUseBlock = (blockId) => {
   if (blockId !== BLOCK.CRAFTING_TABLE) return false;
   inventoryUI.openPanel(3);
@@ -103,7 +106,7 @@ crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
 
 // Debug / test handle (used by the headless browser checks).
-window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager, dayState, sounds };
+window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager, dayState, sounds, particles };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
@@ -178,6 +181,7 @@ renderer.setAnimationLoop((now) => {
 
   mobManager.update(dt, player.pos);
   mobRenderer.sync(mobManager.mobs);
+  particles.update(dt, isSolidAt);
 
   updateHud(now);
   inventoryUI.render();
