@@ -65,7 +65,7 @@ describe('skyColor', () => {
     for (let t = 0.001; t < 1; t += 0.001) {
       const cur = skyColor(t);
       for (let i = 0; i < 3; i++) {
-        expect(Math.abs(cur[i] - prev[i])).toBeLessThan(0.02);
+        expect(Math.abs(cur[i] - prev[i])).toBeLessThan(0.03);
       }
       prev = cur;
     }

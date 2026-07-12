@@ -13,6 +13,7 @@ import {
   advanceTime, sunDirection, skyColor, lightLevels, formatClock,
 } from './core/daynight.js';
 import { MobRenderer } from './render/mobRenderer.js';
+import { SoundPlayer } from './audio/soundPlayer.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
 const MAX_DT = 0.05; // clamp long frames (tab switch etc.)
@@ -73,11 +74,21 @@ const spawnZ = CHUNK_SIZE / 2 + 0.5;
 const spawnY = Math.min(world.surfaceHeight(Math.floor(spawnX), Math.floor(spawnZ)) + 1, CHUNK_HEIGHT - 3);
 const player = createPlayerState(spawnX, spawnY, spawnZ);
 
+const sounds = new SoundPlayer();
+// Autoplay policy: the context must be created inside a user gesture.
+document.addEventListener('mousedown', () => sounds.unlock());
+document.addEventListener('keydown', (e) => {
+  sounds.unlock();
+  if (e.code === 'KeyM') sounds.toggleMute();
+});
+
 const controls = new PlayerControls(renderer.domElement);
 const isSolidAt = (x, y, z) => world.isSolidAt(x, y, z);
 const inventory = new Inventory();
 const inventoryUI = new InventoryUI(inventory, controls);
+inventoryUI.sounds = sounds;
 const interaction = new BlockInteraction(world, controls, player, inventory, scene);
+interaction.sounds = sounds;
 interaction.onUseBlock = (blockId) => {
   if (blockId !== BLOCK.CRAFTING_TABLE) return false;
   inventoryUI.openPanel(3);
@@ -92,7 +103,7 @@ crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
 
 // Debug / test handle (used by the headless browser checks).
-window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager, dayState };
+window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager, dayState, sounds };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
@@ -119,7 +130,7 @@ overlay.innerHTML = `
   <div class="panel">
     <h1>BlockCraft</h1>
     <p>クリックで開始（ポインタロック）</p>
-    <p class="keys">WASD: 移動 / Space: ジャンプ / マウス: 視点 / E: インベントリ / Esc: 解除</p>
+    <p class="keys">WASD: 移動 / Space: ジャンプ / マウス: 視点 / E: インベントリ / M: ミュート / Esc: 解除</p>
   </div>`;
 document.body.appendChild(overlay);
 controls.onLockChange = (locked) => {
@@ -143,7 +154,10 @@ renderer.setAnimationLoop((now) => {
   lastTime = now;
 
   if (controls.locked) {
+    const wasOnGround = player.onGround;
     stepPlayer(isSolidAt, player, controls.getInput(), dt);
+    if (wasOnGround && !player.onGround && player.vel.y > 2) sounds.play('jump');
+    if (!wasOnGround && player.onGround) sounds.play('land');
     // Fell out of the world? Respawn above the spawn column.
     if (player.pos.y < -10) {
       player.pos = { x: spawnX, y: spawnY + 5, z: spawnZ };
