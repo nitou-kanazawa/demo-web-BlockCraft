@@ -5,6 +5,7 @@ import { playerIntersectsVoxel } from '../core/physics.js';
 import { CHUNK_HEIGHT } from '../core/chunk.js';
 import { blockDrop } from '../core/items.js';
 import { breakDuration, MiningTracker } from '../core/breaking.js';
+import { soundForBlock, DIG_SOUND_INTERVAL } from '../core/soundDefs.js';
 
 const REACH = 5; // max targeting distance in blocks
 
@@ -23,6 +24,8 @@ export class BlockInteraction {
     this.hit = null;
     this.mining = false; // left button held
     this.tracker = new MiningTracker();
+    this.sounds = null; // optional SoundPlayer, assigned by main
+    this.digSoundTimer = 0;
 
     this.highlight = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)),
@@ -87,6 +90,17 @@ export class BlockInteraction {
     }
 
     const active = this.mining && this.controls.locked;
+    // Periodic dig tick while actually chipping at a block.
+    if (active && targetKey && duration !== Infinity) {
+      this.digSoundTimer -= dt;
+      if (this.digSoundTimer <= 0) {
+        this.digSoundTimer = DIG_SOUND_INTERVAL;
+        const target = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
+        this.sounds?.play(soundForBlock(target, 'dig'));
+      }
+    } else {
+      this.digSoundTimer = 0;
+    }
     if (this.tracker.update(active, targetKey, duration, dt)) {
       this.breakBlock();
     }
@@ -108,6 +122,7 @@ export class BlockInteraction {
     if (!this.hit) return;
     const broken = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
     this.world.setBlock(this.hit.x, this.hit.y, this.hit.z, BLOCK.AIR);
+    this.sounds?.play(soundForBlock(broken, 'break'));
     const drop = blockDrop(broken);
     if (drop !== null) this.inventory.add(drop, 1);
   }
@@ -129,5 +144,6 @@ export class BlockInteraction {
     const block = this.inventory.consumeSelectedBlock();
     if (block === null) return;
     this.world.setBlock(x, y, z, block);
+    this.sounds?.play(soundForBlock(block, 'place'));
   }
 }

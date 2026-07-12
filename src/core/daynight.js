@@ -46,9 +46,10 @@ const GLOW = [1.0, 0.55, 0.32]; // sunrise / sunset tint
 export function skyColor(t) {
   const d = daylight(t);
   const e = sunElevation(t);
-  // Strongest orange while the sun sits on the horizon; sqrt(d) keeps the
-  // glow visible through twilight instead of fading with the light level.
-  const glowAmount = clamp(1 - Math.abs(e) / 0.25, 0, 1) * 0.7 * Math.sqrt(d);
+  // Strongest orange while the sun sits on the horizon; d*(2-d) boosts the
+  // glow through twilight (like sqrt) but with a bounded slope at d=0 so
+  // the color stays frame-to-frame continuous.
+  const glowAmount = clamp(1 - Math.abs(e) / 0.25, 0, 1) * 0.7 * d * (2 - d);
   return NIGHT_SKY.map((n, i) => {
     const base = lerp(n, DAY_SKY[i], d);
     return clamp(lerp(base, GLOW[i], glowAmount), 0, 1);

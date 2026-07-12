@@ -62,6 +62,7 @@ export class InventoryUI {
     this.cursor = null; // stack held on the mouse cursor inside the panel
     this.craftInv = null; // Inventory(4|9) while the panel is open
     this.craftWidth = 2;
+    this.sounds = null; // optional SoundPlayer, assigned by main
 
     // Hotbar (always visible).
     this.hotbarRoot = document.createElement('div');
@@ -114,6 +115,7 @@ export class InventoryUI {
       slot.addEventListener('mousedown', (e) => {
         e.preventDefault();
         this.cursor = this.inventory.clickSlot(index, this.cursor);
+        this.sounds?.play('click');
       });
       this.grid.appendChild(slot);
       this.panelSlots[index] = slot;
@@ -165,6 +167,7 @@ export class InventoryUI {
       slot.addEventListener('mousedown', (e) => {
         e.preventDefault();
         this.cursor = this.craftInv.clickSlot(i, this.cursor);
+        this.sounds?.play('click');
       });
       this.craftGridEl.appendChild(slot);
       this.craftSlots.push(slot);
@@ -212,6 +215,7 @@ export class InventoryUI {
       return; // cursor holds something incompatible
     }
     consumeGrid(this.craftInv);
+    this.sounds?.play('craft');
   }
 
   /** Refresh all slot visuals; call once per frame. */
