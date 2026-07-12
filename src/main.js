@@ -9,6 +9,9 @@ import { BlockInteraction } from './player/interaction.js';
 import { Inventory } from './core/inventory.js';
 import { InventoryUI } from './ui/inventoryUI.js';
 import { MobManager } from './core/mobs.js';
+import {
+  advanceTime, sunDirection, skyColor, lightLevels, formatClock,
+} from './core/daynight.js';
 import { MobRenderer } from './render/mobRenderer.js';
 
 const VIEW_RADIUS = 3; // chunks generated/rendered around the player
@@ -33,10 +36,30 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 // Sky/ground hemisphere gives cooler shade in shadows than flat ambient.
-scene.add(new THREE.HemisphereLight(0xd8ecff, 0x9a7f5e, 0.75));
+const hemisphere = new THREE.HemisphereLight(0xd8ecff, 0x9a7f5e, 0.75);
+scene.add(hemisphere);
 const sun = new THREE.DirectionalLight(0xfff4e0, 1.15);
 sun.position.set(60, 100, 40);
 scene.add(sun);
+
+// Day/night cycle state (t=0.25 -> start at noon).
+const dayState = { t: 0.25 };
+function applyDayNight() {
+  const dir = sunDirection(dayState.t);
+  sun.position.set(
+    player.pos.x + dir.x * 100,
+    player.pos.y + dir.y * 100,
+    player.pos.z + dir.z * 100,
+  );
+  sun.target.position.set(player.pos.x, player.pos.y, player.pos.z);
+  sun.target.updateMatrixWorld();
+  const levels = lightLevels(dayState.t);
+  sun.intensity = levels.sun;
+  hemisphere.intensity = levels.hemisphere;
+  const [r, g, b] = skyColor(dayState.t);
+  scene.background.setRGB(r, g, b);
+  scene.fog.color.setRGB(r, g, b);
+}
 
 // --- World & player -------------------------------------------------------
 
@@ -69,7 +92,7 @@ crosshair.id = 'crosshair';
 document.body.appendChild(crosshair);
 
 // Debug / test handle (used by the headless browser checks).
-window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager };
+window.blockcraft = { world, player, inventory, inventoryUI, interaction, controls, mobManager, dayState };
 
 const hud = document.createElement('div');
 hud.id = 'hud';
@@ -84,7 +107,8 @@ function updateHud(now) {
   hudLast = now;
   const { x, y, z } = player.pos;
   hud.textContent =
-    `${fps} fps | XYZ ${x.toFixed(1)} / ${y.toFixed(1)} / ${z.toFixed(1)} | seed ${world.seed}`;
+    `${fps} fps | XYZ ${x.toFixed(1)} / ${y.toFixed(1)} / ${z.toFixed(1)} | `
+    + `${formatClock(dayState.t)} | seed ${world.seed}`;
 }
 
 // --- Overlay (click to play) ----------------------------------------------
@@ -134,6 +158,9 @@ renderer.setAnimationLoop((now) => {
   worldRenderer.ensureRadius(pcx, pcz, VIEW_RADIUS);
   worldRenderer.pruneBeyond(pcx, pcz, VIEW_RADIUS + 1);
   worldRenderer.update(2, pcx, pcz, VIEW_RADIUS);
+
+  dayState.t = advanceTime(dayState.t, dt);
+  applyDayNight();
 
   mobManager.update(dt, player.pos);
   mobRenderer.sync(mobManager.mobs);
