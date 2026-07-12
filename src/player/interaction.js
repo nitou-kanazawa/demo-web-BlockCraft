@@ -6,6 +6,7 @@ import { CHUNK_HEIGHT } from '../core/chunk.js';
 import { blockDrop } from '../core/items.js';
 import { breakDuration, MiningTracker } from '../core/breaking.js';
 import { soundForBlock, DIG_SOUND_INTERVAL } from '../core/soundDefs.js';
+import { BLOCK_COLORS } from '../core/blockColors.js';
 
 const REACH = 5; // max targeting distance in blocks
 
@@ -25,6 +26,7 @@ export class BlockInteraction {
     this.mining = false; // left button held
     this.tracker = new MiningTracker();
     this.sounds = null; // optional SoundPlayer, assigned by main
+    this.particles = null; // optional ParticleRenderer, assigned by main
     this.digSoundTimer = 0;
 
     this.highlight = new THREE.LineSegments(
@@ -97,6 +99,16 @@ export class BlockInteraction {
         this.digSoundTimer = DIG_SOUND_INTERVAL;
         const target = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
         this.sounds?.play(soundForBlock(target, 'dig'));
+        // Chips fly off the face being chipped at.
+        this.particles?.burst({
+          x: this.hit.x + 0.5 + this.hit.nx * 0.55,
+          y: this.hit.y + 0.5 + this.hit.ny * 0.55,
+          z: this.hit.z + 0.5 + this.hit.nz * 0.55,
+          count: 4,
+          speed: 1.6,
+          lifetime: 0.5,
+          color: BLOCK_COLORS[target] ?? '#888888',
+        });
       }
     } else {
       this.digSoundTimer = 0;
@@ -123,6 +135,15 @@ export class BlockInteraction {
     const broken = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
     this.world.setBlock(this.hit.x, this.hit.y, this.hit.z, BLOCK.AIR);
     this.sounds?.play(soundForBlock(broken, 'break'));
+    this.particles?.burst({
+      x: this.hit.x + 0.5,
+      y: this.hit.y + 0.5,
+      z: this.hit.z + 0.5,
+      count: 16,
+      speed: 2.6,
+      lifetime: 0.8,
+      color: BLOCK_COLORS[broken] ?? '#888888',
+    });
     const drop = blockDrop(broken);
     if (drop !== null) this.inventory.add(drop, 1);
   }
@@ -145,5 +166,10 @@ export class BlockInteraction {
     if (block === null) return;
     this.world.setBlock(x, y, z, block);
     this.sounds?.play(soundForBlock(block, 'place'));
+    this.particles?.burst({
+      x: x + 0.5, y: y + 0.5, z: z + 0.5,
+      count: 6, speed: 1.2, lifetime: 0.4,
+      color: BLOCK_COLORS[block] ?? '#888888',
+    });
   }
 }
