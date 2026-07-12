@@ -14,6 +14,7 @@ export const ITEM = {
   PLANK: BLOCK.PLANK,
   BRICK: BLOCK.BRICK,
   CRAFTING_TABLE: BLOCK.CRAFTING_TABLE,
+  WOOL: BLOCK.WOOL,
   // Non-block items (100+)
   STICK: 100,
   WOOD_PICKAXE: 101,
@@ -22,6 +23,7 @@ export const ITEM = {
   STONE_PICKAXE: 104,
   STONE_AXE: 105,
   STONE_SHOVEL: 106,
+  PORKCHOP: 107,
 };
 
 export const ITEM_INFO = {
@@ -34,8 +36,10 @@ export const ITEM_INFO = {
   [ITEM.PLANK]: { name: 'plank', kind: 'block', block: BLOCK.PLANK, maxStack: 64 },
   [ITEM.BRICK]: { name: 'brick', kind: 'block', block: BLOCK.BRICK, maxStack: 64 },
   [ITEM.CRAFTING_TABLE]: { name: 'crafting table', kind: 'block', block: BLOCK.CRAFTING_TABLE, maxStack: 64 },
+  [ITEM.WOOL]: { name: 'wool', kind: 'block', block: BLOCK.WOOL, maxStack: 64 },
   // Materials
   [ITEM.STICK]: { name: 'stick', kind: 'material', maxStack: 64 },
+  [ITEM.PORKCHOP]: { name: 'porkchop', kind: 'material', maxStack: 64 },
   // Tools: `speed` divides the matching block's hardness (see breaking.js).
   [ITEM.WOOD_PICKAXE]: { name: 'wood pickaxe', kind: 'tool', toolClass: 'pickaxe', speed: 3, maxStack: 1 },
   [ITEM.WOOD_AXE]: { name: 'wood axe', kind: 'tool', toolClass: 'axe', speed: 3, maxStack: 1 },

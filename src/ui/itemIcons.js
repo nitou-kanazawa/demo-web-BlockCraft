@@ -79,8 +79,28 @@ const STICK = [
   '................',
 ];
 
+const PORKCHOP = [
+  '................',
+  '................',
+  '......MMMM......',
+  '....MMMMMMMM....',
+  '...MMMMMMMMMM...',
+  '...MMMMMMMMMM...',
+  '...MMMMMMMMM....',
+  '....MMMMMMM.....',
+  '.....MMMMM......',
+  '......MMM.......',
+  '.......HH.......',
+  '.......HH.......',
+  '......HHH.......',
+  '................',
+  '................',
+  '................',
+];
+
 const WOOD_COLORS = { H: '#6b4a2b', M: '#b08d55' };
 const STONE_COLORS = { H: '#6b4a2b', M: '#8d8d8d' };
+const MEAT_COLORS = { H: '#f2e9dc', M: '#e88a8a' }; // bone + meat
 
 function drawIcon(map, colors) {
   const canvas = document.createElement('canvas');
@@ -110,6 +130,7 @@ export function itemIconUrl(id) {
       [ITEM.STONE_PICKAXE]: drawIcon(PICKAXE, STONE_COLORS),
       [ITEM.STONE_AXE]: drawIcon(AXE, STONE_COLORS),
       [ITEM.STONE_SHOVEL]: drawIcon(SHOVEL, STONE_COLORS),
+      [ITEM.PORKCHOP]: drawIcon(PORKCHOP, MEAT_COLORS),
     };
   }
   return cache[id] ?? null;
